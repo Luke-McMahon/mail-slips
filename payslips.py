@@ -63,7 +63,6 @@ def main():
                         # print(part['filename'])
                         if part['filename'] == 'PaySlip.pdf':
                             title = title.replace(' ', '')
-                            print(title)
                             path = './payslips/' + title + '.pdf'
                             if not os.path.exists(path):
                                 attachmentId = part['body']['attachmentId']

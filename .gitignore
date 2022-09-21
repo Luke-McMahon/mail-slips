@@ -1,5 +1,5 @@
 # Important
-/payslips
+/payslips/*
 credentials.json
 token.json
 
