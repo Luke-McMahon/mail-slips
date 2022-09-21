@@ -1,6 +1,10 @@
-from __future__ import print_function
+"""
+Downloads payslip pdf files from Gmail and processes them
+"""
+
 
 import os.path
+import base64
 
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
@@ -8,13 +12,13 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-import base64
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
 
 
 def connect_to_api():
+    """ Connect to the Gmail API, create token file and return the creds"""
     creds = None
     # The file token.json stores the user's access and refresh tokens, and is
     # created automatically when the authorization flow completes for the first
@@ -31,19 +35,16 @@ def connect_to_api():
             creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
             #
-        with open('token.json', 'w') as token:
+        with open('token.json', 'w', encoding='utf-8') as token:
             token.write(creds.to_json())
     return creds
 
 
-def fetch_emails(service, creds):
+def fetch_emails(service):
+    """ Fetch emails under a specified label"""
     messages = None
     try:
         # Call the Gmail API
-
-        labels = service.users().labels().list(
-            userId='me'
-        ).execute()
         results = service.users().messages().list(
             userId='me', labelIds=['Label_6047149750864999652']).execute()
         messages = results['messages']
@@ -55,9 +56,10 @@ def fetch_emails(service, creds):
     return messages
 
 
-def process_attachment(service, messageId, attachment_id, title="Payslip"):
+def process_attachment(service, message_id, attachment_id):
+    """ Return a base64 decoded data stream of a given attachment id"""
     attachment = service.users().messages().attachments().get(
-        userId='me', messageId=messageId, id=attachment_id
+        userId='me', messageId=message_id, id=attachment_id
     ).execute()
     data = attachment['data']
     file_data = base64.urlsafe_b64decode(
@@ -66,6 +68,7 @@ def process_attachment(service, messageId, attachment_id, title="Payslip"):
 
 
 def process_email(service, message_id, email):
+    """ Given an email, download a pdf or skip it if we've already got it"""
     headers = email['payload']['headers']
     payslips_path = './payslips/'
 
@@ -82,9 +85,9 @@ def process_email(service, message_id, email):
 
                     path = payslips_path + title + '.pdf'
                     if not os.path.exists(path):
-                        attachmentId = part['body']['attachmentId']
+                        attachment_id = part['body']['attachmentId']
                         file_data = process_attachment(
-                            service, message_id, attachmentId, title)
+                            service, message_id, attachment_id)
                         with open(path, 'wb') as file:
                             file.write(file_data)
                             print(f'{title}.pdf created')
@@ -94,14 +97,14 @@ def process_email(service, message_id, email):
 
 
 def main():
-
+    """ Entry point"""
     print("Connecting to Gmail API")
     creds = connect_to_api()
     service = build('gmail', 'v1', credentials=creds)
     print("Connected to Gmail API")
 
     print("Grabbing emails")
-    messages = fetch_emails(service, creds)
+    messages = fetch_emails(service)
 
     if not messages:
         print('No messages found.')
@@ -109,6 +112,7 @@ def main():
 
     for message in messages:
         message_id = message['id']
+        # pylint: disable=maybe-no-member
         msg = service.users().messages().get(
             userId='me', id=message_id
         ).execute()
