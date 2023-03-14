@@ -12,7 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-payslips_path = "C:\\Users\\lukem\\Documents\\Work\\Two_Bulls\\payslips\\"
+PAYSLIPS_PATH = "C:\\Users\\lukem\\Documents\\Work\\Two_Bulls\\payslips\\"
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -85,11 +85,11 @@ month_to_title_map = {
 def process_email(service, message_id, email):
     """ Given an email, download a pdf or skip it if we've already got it"""
 
-    global payslips_path
+    global PAYSLIPS_PATH
 
     headers = email['payload']['headers']
-    if payslips_path == '':
-        payslips_path = './payslips/'
+    if PAYSLIPS_PATH == '':
+        PAYSLIPS_PATH = './payslips/'
 
     for header in headers:
         if header['name'] == 'Subject' and "Payslip for" in header['value']:
@@ -101,13 +101,13 @@ def process_email(service, message_id, email):
                     print(title_parts)
                     pdf_title = month_to_title_map[title_parts[0]] + title_parts[1]
 
-                    # TODO: split into folders based on the year, should be title_parts[1] for all emails
+                    # TODO: split into folders based on the year
                     # title_parts = ['January', '2023']
 
-                    if not os.path.exists(payslips_path):
-                        os.mkdir(os.getcwd() + payslips_path)
+                    if not os.path.exists(PAYSLIPS_PATH):
+                        os.mkdir(os.getcwd() + PAYSLIPS_PATH)
 
-                    path = payslips_path + pdf_title + '.pdf'
+                    path = PAYSLIPS_PATH + pdf_title + '.pdf'
                     if not os.path.exists(path):
                         attachment_id = part['body']['attachmentId']
                         file_data = process_attachment(
