@@ -82,14 +82,14 @@ month_to_title_map = {
     'December': '12Dec',
 }
 
-def process_email(service, message_id, email):
+def process_email(service, message_id, email, payslips_path):
     """ Given an email, download a pdf or skip it if we've already got it"""
 
-    global PAYSLIPS_PATH
+
 
     headers = email['payload']['headers']
-    if PAYSLIPS_PATH == '':
-        PAYSLIPS_PATH = './payslips/'
+    if payslips_path == '':
+        payslips_path = './payslips/'
 
     for header in headers:
         if header['name'] == 'Subject' and "Payslip for" in header['value']:
@@ -104,10 +104,10 @@ def process_email(service, message_id, email):
                     # TODO: split into folders based on the year
                     # title_parts = ['January', '2023']
 
-                    if not os.path.exists(PAYSLIPS_PATH):
-                        os.mkdir(os.getcwd() + PAYSLIPS_PATH)
+                    if not os.path.exists(payslips_path):
+                        os.mkdir(os.getcwd() + payslips_path)
 
-                    path = PAYSLIPS_PATH + pdf_title + '.pdf'
+                    path = payslips_path + pdf_title + '.pdf'
                     if not os.path.exists(path):
                         attachment_id = part['body']['attachmentId']
                         file_data = process_attachment(
@@ -140,7 +140,7 @@ def main():
         msg = service.users().messages().get(
             userId='me', id=message_id
         ).execute()
-        process_email(service, message_id, msg)
+        process_email(service, message_id, msg, PAYSLIPS_PATH)
 
 
 if __name__ == '__main__':
