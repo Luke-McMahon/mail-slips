@@ -12,6 +12,7 @@ from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
+PAYSLIPS_PATH = "C:\\Users\\lukem\\Documents\\Work\\Two_Bulls\\payslips\\"
 
 # If modifying these scopes, delete the file token.json.
 SCOPES = ['https://www.googleapis.com/auth/gmail.readonly']
@@ -66,11 +67,29 @@ def process_attachment(service, message_id, attachment_id):
         data.encode('UTF-8'))
     return file_data
 
+month_to_title_map = {
+    'January': '01Jan',
+    'February': '02Feb',
+    'March': '03Mar',
+    'April': '04Apr',
+    'May': '05May',
+    'June': '06Jun',
+    'July': '07Jul',
+    'August': '08Aug',
+    'September': '09Sep',
+    'October': '10Oct',
+    'November': '11Nov',
+    'December': '12Dec',
+}
 
-def process_email(service, message_id, email):
+def process_email(service, message_id, email, payslips_path):
     """ Given an email, download a pdf or skip it if we've already got it"""
+
+
+
     headers = email['payload']['headers']
-    payslips_path = './payslips/'
+    if payslips_path == '':
+        payslips_path = './payslips/'
 
     for header in headers:
         if header['name'] == 'Subject' and "Payslip for" in header['value']:
@@ -78,19 +97,24 @@ def process_email(service, message_id, email):
                 'Payslip for Luke McMahon for ', '')
             for part in email['payload'].get('parts', ''):
                 if part['filename'] == 'PaySlip.pdf':
-                    title = title.replace(' ', '')
+                    title_parts = title.split(' ')
+                    print(title_parts)
+                    pdf_title = month_to_title_map[title_parts[0]] + title_parts[1]
+
+                    # TODO(developer) split into folders based on the year
+                    # title_parts = ['January', '2023']
 
                     if not os.path.exists(payslips_path):
                         os.mkdir(os.getcwd() + payslips_path)
 
-                    path = payslips_path + title + '.pdf'
+                    path = payslips_path + pdf_title + '.pdf'
                     if not os.path.exists(path):
                         attachment_id = part['body']['attachmentId']
                         file_data = process_attachment(
                             service, message_id, attachment_id)
                         with open(path, 'wb') as file:
                             file.write(file_data)
-                            print(f'{title}.pdf created')
+                            print(f'{path} created')
                     else:
                         print(
                             f'Payslip already exists for {title}... Skipping.')
@@ -116,7 +140,7 @@ def main():
         msg = service.users().messages().get(
             userId='me', id=message_id
         ).execute()
-        process_email(service, message_id, msg)
+        process_email(service, message_id, msg, PAYSLIPS_PATH)
 
 
 if __name__ == '__main__':
