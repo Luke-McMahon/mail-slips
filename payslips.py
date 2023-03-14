@@ -101,7 +101,7 @@ def process_email(service, message_id, email, payslips_path):
                     print(title_parts)
                     pdf_title = month_to_title_map[title_parts[0]] + title_parts[1]
 
-                    # TODO: split into folders based on the year
+                    # TODO(developer) split into folders based on the year
                     # title_parts = ['January', '2023']
 
                     if not os.path.exists(payslips_path):
